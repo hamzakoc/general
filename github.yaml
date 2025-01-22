@@ -1,0 +1,50 @@
+name: Branch-Based Approval Workflow
+
+on:
+  push:
+    branches:
+      - 'feature/*'
+      - 'hotfix/*'
+      - 'main'
+
+jobs:
+  trigger-approval:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the Repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Set Approvers Based on Branch
+      - name: Set Approvers
+        id: approvers
+        run: |
+          if [[ "${{ github.ref_name }}" == feature/* ]]; then
+            echo "approvers=approver1@example.com,approver2@example.com" >> $GITHUB_ENV
+          elif [[ "${{ github.ref_name }}" == hotfix/* ]]; then
+            echo "approvers=approver3@example.com" >> $GITHUB_ENV
+          elif [[ "${{ github.ref_name }}" == main ]]; then
+            echo "approvers=lead@example.com" >> $GITHUB_ENV
+          else
+            echo "Unknown branch pattern, no approvers set."
+            exit 1
+          fi
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Approvers: ${{ env.approvers }}"
+
+      # Step 3: Manual Approval (Optional)
+      - name: Trigger Approval
+        uses: hmarr/auto-approve-action@v2
+        with:
+          approvers: ${{ env.approvers }}
+
+      # Step 4: Notify Approvers (Optional)
+      - name: Send Notification to Approvers
+        run: |
+          echo "Notifying approvers: ${{ env.approvers }}"
+          # Example: Send email or Slack message (add your notification logic here)
+
+      # Step 5: Perform Additional Actions After Approval
+      - name: Post-Approval Actions
+        run: |
+          echo "Approval completed for branch: ${{ github.ref_name }}"
