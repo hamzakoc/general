@@ -1,0 +1,38 @@
+name: Validate CODEOWNERS Before Merge
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  validate-codeowners:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Read CODEOWNERS File
+        id: read-codeowners
+        run: |
+          CODEOWNERS_CONTENT=$(cat .github/CODEOWNERS)
+          echo "CODEOWNERS=$CODEOWNERS_CONTENT" >> $GITHUB_ENV
+
+      - name: Validate Code Owners Based on Branch
+        run: |
+          PR_BRANCH=${{ github.head_ref }}
+
+          if [[ "$PR_BRANCH" == "alfa/dev" ]]; then
+            EXPECTED_OWNERS="@x @y @z"
+          else
+            EXPECTED_OWNERS="@a @b @c @d"
+          fi
+
+          ACTUAL_OWNERS=$(grep -oP '(?<=\*\s).+' .github/CODEOWNERS)
+
+          if [[ "$ACTUAL_OWNERS" != "$EXPECTED_OWNERS" ]]; then
+            echo "❌ CODEOWNERS validation failed! Expected: $EXPECTED_OWNERS, Found: $ACTUAL_OWNERS"
+            exit 1
+          fi
+
+      - name: Mark Success
+        run: echo "✅ CODEOWNERS validation passed!"
